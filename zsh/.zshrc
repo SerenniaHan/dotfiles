@@ -96,20 +96,63 @@ alias showstash="git stash list"
 # 函数
 # ------------------------------------------------------------
 
-# 清理远程已删除的本地分支
-# 使用 -d 而不是 -D: 含未合并提交的分支会被拒绝删除，避免丢失未推送的工作
+# 清理远程已删除的本地分支 (upstream 为 gone)
+#
+# 不用 git branch -d: 它按 commit SHA 判断是否已合并，而 GitHub 的 squash /
+# rebase merge 会生成全新的 commit，原分支永远不会成为主分支的祖先，于是被误判为
+# "not fully merged" 而拒绝删除。
+#
+# 改为按内容判断: 把分支的 tree 重新挂到 merge-base 上造一个临时 commit，再用
+# git cherry 比对 patch-id。内容已并入当前分支的用 -D 删除，确有未合并内容的保留
+# 并提示，避免丢工作。
 function gitcleanup() {
   if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
     echo "❌ 错误：当前目录不是 Git 仓库"
     return 1
   fi
+
+  local base
+  base=$(git symbolic-ref --quiet --short HEAD)
+  if [ -z "$base" ]; then
+    echo "❌ 错误：当前处于 detached HEAD，请先切回主分支"
+    return 1
+  fi
+
   echo "🚀 正在同步远程状态 (fetch -p)..."
   git fetch -p
-  local gone_branches=$(git branch -vv | grep ': gone]' | grep -v '^*' | awk '{print $1}')
-  if [ -n "$gone_branches" ]; then
-    echo "🧹 发现并清理过时分支：$gone_branches"
-    echo "$gone_branches" | xargs git branch -d
-  else
+
+  # for-each-ref 直接输出分支名，不受 git branch 的 "*" / "+" 前缀干扰
+  local -a gone_branches
+  gone_branches=(${(f)"$(git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads |
+    awk '$2 == "[gone]" { print $1 }')"})
+
+  local -a deleted kept
+  local branch merge_base tree dangling
+  for branch in $gone_branches; do
+    [ -z "$branch" ] && continue
+    [ "$branch" = "$base" ] && continue
+
+    merge_base=$(git merge-base "$base" "$branch") || continue
+    tree=$(git rev-parse "$branch^{tree}")
+    dangling=$(git commit-tree "$tree" -p "$merge_base" -m _)
+
+    if git cherry "$base" "$dangling" | grep -q '^+'; then
+      kept+=("$branch")
+    else
+      git branch -D "$branch" > /dev/null && deleted+=("$branch")
+    fi
+  done
+
+  if (( ${#deleted} )); then
+    echo "🧹 已清理 ${#deleted} 个过时分支 (内容已并入 $base)："
+    printf '   ✔ %s\n' $deleted
+  fi
+  if (( ${#kept} )); then
+    echo "⚠️  以下分支远端已删除，但仍有未并入 $base 的提交，已保留："
+    printf '   • %s\n' $kept
+    echo "   确认可丢弃后手动执行：git branch -D <branch>"
+  fi
+  if (( ${#deleted} == 0 && ${#kept} == 0 )); then
     echo "✨ 本地仓库很干净。"
   fi
 }
