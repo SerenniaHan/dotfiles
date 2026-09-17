@@ -31,7 +31,7 @@ A personal Neovim setup managed with [lazy.nvim][lazy].
 nvim/
 ├── init.lua                       # Entry point — options, diagnostics, colorscheme
 ├── filetype.lua                   # Custom filetype detection
-├── lazy-lock.json                 # Plugin version lockfile
+├── lazy-lock.json                 # Plugin version lockfile (git-ignored, per machine)
 ├── spell/                         # Custom spell-check word list
 └── lua/
     ├── config/
