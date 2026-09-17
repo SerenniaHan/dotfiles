@@ -44,7 +44,7 @@ zsh/
 | `g`, `gst`, `ga`, `gc`, `gco`, `gsw`, `gb`, `gd`, `gl`, `gp` | `git`, `status`, `add`, `commit`, `checkout`, `switch`, `branch`, `diff`, `pull`, `push` |
 | `gtree` | `git log --oneline` |
 | `showstash` | `git stash list` |
-| `gitcleanup` | Fetch with prune, then delete local branches whose remote is gone. Uses `git branch -d`, so branches with unmerged commits are kept |
+| `gitcleanup` | Fetch with prune, then delete local branches whose remote is gone. Merge detection compares patch-ids, so squash- and rebase-merged branches are recognized; branches with genuinely unmerged commits are kept and reported |
 
 ## Installation
 
