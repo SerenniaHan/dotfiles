@@ -80,9 +80,20 @@ machines.
 `gc`, `gl` and `gp` are built-in aliases for `Get-Content`, `Get-Location` and
 `Get-ItemProperty`. PowerShell resolves aliases **before** functions, so the
 profile removes those three aliases before defining the git functions of the
-same name. This only affects the interactive session; the cmdlets are still
-reachable by their full names. To keep them, delete the `foreach ($builtin …)`
-loop and the three functions.
+same name.
+
+The removal applies to every session that loads this profile, which includes
+scripts run without `-NoProfile`:
+
+```powershell
+powershell.exe -File script.ps1              # gc is git commit here
+powershell.exe -NoProfile -File script.ps1   # gc is Get-Content here
+```
+
+So a script using `gc`, `gl` or `gp` as shorthand for the cmdlets will behave
+differently depending on how it is invoked. The full cmdlet names are never
+affected. To keep the built-ins instead, delete the `foreach ($builtin …)` loop
+and the three functions of the same name.
 
 ## Encoding
 

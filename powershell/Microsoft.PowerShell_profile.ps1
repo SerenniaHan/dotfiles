@@ -41,7 +41,10 @@ if (Get-Module PSReadLine) {
 # ------------------------------------------------------------
 # gc / gl / gp 是 Get-Content / Get-Location / Get-ItemProperty 的內建別名，
 # 而 PowerShell 的命令優先序是「別名 > 函式」，不先移除的話下面的 git 函式不會生效。
-# 移除只影響互動工作階段，這些 cmdlet 仍可用完整名稱呼叫。
+#
+# 影響範圍是「任何載入本 profile 的工作階段」，包含不帶 -NoProfile 執行的腳本。
+# 所以若有腳本拿 gc / gl / gp 當 Get-Content / Get-Location / Get-ItemProperty 的
+# 簡寫用，在這裡會變成 git 指令。cmdlet 用完整名稱呼叫則永遠不受影響。
 foreach ($builtin in 'gc', 'gl', 'gp') {
     if (Test-Path "Alias:$builtin") { Remove-Item "Alias:$builtin" -Force }
 }
