@@ -7,6 +7,9 @@
 /.netrwhist
 /*.log
 
+# 插件版本锁定文件：每台机器 lazy.nvim 自己生成，跟着同步只会互相覆盖
+/lazy-lock.json
+
 # 如果你在配置里偷懒写过一些临时测试文件，也可以过滤掉
 .DS_Store
 
